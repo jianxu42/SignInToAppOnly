@@ -8,7 +8,7 @@ public class SITAO
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: SAO.exe <windowName> <hyperlinkText>");
+            Console.WriteLine("Usage: SignInToAppOnly.exe <windowName> <hyperlinkText>");
             return;
         }
 

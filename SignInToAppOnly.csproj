@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{19C2967F-0057-4628-AF13-372AA8650C43}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>SAO</RootNamespace>
-    <AssemblyName>SAO</AssemblyName>
+    <RootNamespace>SignInToAppOnly</RootNamespace>
+    <AssemblyName>SignInToAppOnly</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
