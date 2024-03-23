@@ -8,7 +8,7 @@ public class SITAO
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: UiAutomationExample.exe <windowName> <hyperlinkText>");
+            Console.WriteLine("Usage: SAO.exe <windowName> <hyperlinkText>");
             return;
         }
 
