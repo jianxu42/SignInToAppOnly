@@ -1,21 +1,22 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Windows.Automation;
 
+[assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config")]
 public class SITAO
 {
+    private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
     public static void Main(string[] args)
     {
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: SignInToAppOnly.exe <windowName> <hyperlinkText>");
+            log.Warn("Usage: SignInToAppOnly.exe <windowName> <hyperlinkText>");
             return;
         }
 
         string windowName = args[0];
         string hyperlinkText = args[1];
 
-        Console.WriteLine($"Starting monitoring for window: {windowName} and hyperlink: {hyperlinkText}...");
+        log.Info($"Starting monitoring for window: {windowName} and hyperlink: {hyperlinkText}...");
 
         while (true)
         {
@@ -30,7 +31,6 @@ public class SITAO
 
                 if (window != null)
                 {
-                    Console.WriteLine($"Found window: {windowName}");
 
                     // Find the Hyperlink control named hyperlinkText
                     var hyperLinkCondition = new AndCondition(
@@ -42,27 +42,19 @@ public class SITAO
 
                     if (hyperLink != null)
                     {
-                        Console.WriteLine($"Found hyperlink: {hyperlinkText}.");
+                        log.Info($"Found window: {windowName} and hyperlink: {hyperlinkText}.");
                         if (hyperLink.TryGetCurrentPattern(InvokePattern.Pattern, out object pattern))
                         {
                             var invokePattern = (InvokePattern)pattern;
                             invokePattern.Invoke();
-                            Console.WriteLine($"Clicked on hyperlink: {hyperlinkText}.");
+                            log.Info($"Clicked on hyperlink: {hyperlinkText}.");
                         }
                         else
                         {
-                            Console.WriteLine("The hyperlink cannot be invoked.");
+                            log.Error("The hyperlink cannot be invoked.");
                         }
                     }
-                    /*else
-                    {
-                        Console.WriteLine($"Could not find the hyperlink: {hyperlinkText}.");
-                    }*/
                 }
-                /*else
-                {
-                    Console.WriteLine($"No window found with title: {windowName}.");
-                }*/
             }
 
             Thread.Sleep(500);
