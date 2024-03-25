@@ -7,27 +7,28 @@ using System.Windows.Automation;
 public class SITAO
 {
     private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-    private static string windowName;
+    private static string windowName = null; // Initialize to null to indicate it's optional
     private static string hyperlinkText;
 
     public static void Main(string[] args)
     {
-        if (args.Length < 2)
+        if (args.Length < 1)
         {
-            log.Warn("Usage: SignInToAppOnly.exe <windowName> <hyperlinkText>");
+            Console.WriteLine("Usage: SignInToAppOnly.exe <hyperlinkText> [windowName]");
             return;
         }
 
-        windowName = args[0];
-        hyperlinkText = args[1];
+        hyperlinkText = args[0];
+        if (args.Length > 1) // Window name is provided as an optional second argument
+        {
+            windowName = args[1];
+        }
 
-        log.Info($"Starting monitoring for window: {windowName} and hyperlink: {hyperlinkText}...");
+        log.Info($"Starting monitoring for hyperlink: {hyperlinkText}" + (windowName != null ? $" in window: {windowName}" : "") + "...");
 
         // Start a separate thread for monitoring
-        Thread monitorThread = new Thread(MonitorWindows)
-        {
-            IsBackground = true
-        };
+        Thread monitorThread = new Thread(MonitorWindows);
+        monitorThread.IsBackground = true;
         monitorThread.Start();
 
         Console.WriteLine("Press any key to exit...");
@@ -36,38 +37,61 @@ public class SITAO
 
     private static void MonitorWindows()
     {
-        while (true) // Replace with a condition to stop the monitoring if necessary
+        while (true)
         {
-            TryFindAndInvokeHyperlink();
+            TryFindAndInvokeHyperlinks();
             Thread.Sleep(1000); // Wait for 1 second before trying again
         }
     }
 
-    private static void TryFindAndInvokeHyperlink()
+    private static void TryFindAndInvokeHyperlinks()
     {
         // Retrieve the root element on the desktop
         AutomationElement rootElement = AutomationElement.RootElement;
+        var hyperLinkCondition = new AndCondition(
+            new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Hyperlink),
+            new PropertyCondition(AutomationElement.NameProperty, hyperlinkText)
+        );
 
-        // Search for the window using the window title
-        var windowCondition = new PropertyCondition(AutomationElement.NameProperty, windowName);
-        AutomationElement window = rootElement.FindFirst(TreeScope.Children, windowCondition);
-
-        if (window != null)
+        if (windowName != null)
         {
+            // If a window name is specified, search for the window
+            var windowCondition = new PropertyCondition(AutomationElement.NameProperty, windowName);
+            AutomationElement window = rootElement.FindFirst(TreeScope.Children, windowCondition);
+            if (window != null)
+            {
+                FindAndInvokeHyperlinksInWindow(window, hyperLinkCondition);
+            }
+            else
+            {
+                log.Warn($"Window: {windowName} not found.");
+            }
+        }
+        else
+        {
+            // No window name specified, search through all top-level windows
+            var windows = rootElement.FindAll(TreeScope.Children, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Window));
+            foreach (AutomationElement window in windows)
+            {
+                FindAndInvokeHyperlinksInWindow(window, hyperLinkCondition);
+            }
+        }
+    }
 
-            // Find the Hyperlink control named hyperlinkText
-            var hyperLinkCondition = new AndCondition(
-                new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Hyperlink),
-                new PropertyCondition(AutomationElement.NameProperty, hyperlinkText)
-            );
-
-            AutomationElement hyperLink = window.FindFirst(TreeScope.Descendants, hyperLinkCondition);
-
-            if (hyperLink != null && hyperLink.TryGetCurrentPattern(InvokePattern.Pattern, out object pattern))
+    private static void FindAndInvokeHyperlinksInWindow(AutomationElement window, Condition hyperLinkCondition)
+    {
+        var hyperLinks = window.FindAll(TreeScope.Descendants, hyperLinkCondition);
+        foreach (AutomationElement hyperLink in hyperLinks)
+        {
+            if (hyperLink.TryGetCurrentPattern(InvokePattern.Pattern, out object pattern))
             {
                 var invokePattern = (InvokePattern)pattern;
                 invokePattern.Invoke();
-                log.Info($"Found window: {windowName} and invoked hyperlink: {hyperlinkText}.");
+                log.Info($"Invoked hyperlink: {hyperlinkText} in window: {window.Current.Name}.");
+            }
+            else
+            {
+                log.Warn($"Hyperlink: {hyperlinkText} in window: {window.Current.Name} could not be invoked.");
             }
         }
     }

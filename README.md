@@ -9,7 +9,7 @@ Welcome to the SITAO (SignInToAppOnly) utility! This tool is designed to help us
 ## How to use it 
 To use SITAO, provide it with two arguments: the exact name of the window you want to target, and the text of the hyperlink you wish to invoke. It's a simple command-line invocation that saves you time by automating repetitive sign-in steps.
 ```
-SignInToAppOnly.exe "YourWindowName" "YourHyperlinkText"
+SignInToAppOnly.exe <hyperlinkText> [windowName]
 ```
 SITAO is perfect for users who frequently interact with applications that require manual sign-ins through a graphical interface. Now you can automate this with ease, thanks to SITAO's seamless integration with the Windows Automation API.
 
@@ -18,7 +18,7 @@ Start simplifying your sign-in processes today with SITAO!
 
 ## Example of Power Apps
 ```
-SignInToAppOnly.exe "Power Apps" "No, sign in to this app only"
+SignInToAppOnly.exe "No, sign in to this app only" "Power Apps"
 ```
 ![Alt text](PowerApps.png)
 
