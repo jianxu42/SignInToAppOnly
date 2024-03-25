@@ -23,6 +23,6 @@ SignInToAppOnly.exe "No, sign in to this app only" "Power Apps"
 ![Alt text](PowerApps.png)
 
 ## Note
-This is solely for testing purposes and should not be considered reliable.
+This tool is designed exclusively for testing and experimentation and should not be regarded as a dependable solution.
 
-Ensure that it does not cause excessive interruptions or interference with the target application, especially if the application has anti-automation measures. Additionally, frequent polling and automated actions may be considered malicious behavior by some antivirus software. Always ensure that your automation strategy complies with the application's terms of use and privacy policy.
+It's important to use it cautiously to avoid causing significant disruptions or interference with the targeted application, particularly in cases where the application employs measures to prevent automation. Moreover, continuous monitoring and automated interactions might be perceived as suspicious activity by certain antivirus programs. Always make sure that your approach to automation aligns with the application's terms of service and privacy policy.
