@@ -1,6 +1,8 @@
 ﻿using log4net;
 using System;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Automation;
 
 [assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config")]
@@ -71,17 +73,17 @@ public class SITAO
         {
             // No window name specified, search through all top-level windows
             var windows = rootElement.FindAll(TreeScope.Children, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Window));
-            foreach (AutomationElement window in windows)
+            Parallel.ForEach(windows.Cast<AutomationElement>(), window =>
             {
                 FindAndInvokeHyperlinksInWindow(window, hyperLinkCondition);
-            }
+            });
         }
     }
 
     private static void FindAndInvokeHyperlinksInWindow(AutomationElement window, Condition hyperLinkCondition)
     {
         var hyperLinks = window.FindAll(TreeScope.Descendants, hyperLinkCondition);
-        foreach (AutomationElement hyperLink in hyperLinks)
+        Parallel.ForEach(hyperLinks.Cast<AutomationElement>(), hyperLink =>
         {
             if (hyperLink.TryGetCurrentPattern(InvokePattern.Pattern, out object pattern))
             {
@@ -93,6 +95,6 @@ public class SITAO
             {
                 log.Warn($"Hyperlink: {hyperlinkText} in window: {window.Current.Name} could not be invoked.");
             }
-        }
+        });
     }
 }
