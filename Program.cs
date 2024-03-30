@@ -1,6 +1,7 @@
 ﻿using log4net;
 using System;
-using System.Threading;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Automation;
 
 [assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config")]
@@ -26,23 +27,22 @@ public class SITAO
 
         log.Info($"Starting monitoring for hyperlink: {hyperlinkText}" + (windowName != null ? $" in window: {windowName}" : "") + "...");
 
-        Thread monitorThread = new Thread(MonitorWindows) { IsBackground = true };
-        monitorThread.Start();
+        Task.Run(MonitorWindows);
 
         Console.WriteLine("Press any key to exit...");
         Console.ReadKey();
     }
 
-    private static void MonitorWindows()
+    private static async Task MonitorWindows()
     {
         while (true)
         {
-            TryFindAndInvokeHyperlinks();
-            Thread.Sleep(500);
+            await TryFindAndInvokeHyperlinksAsync();
+            await Task.Delay(500);
         }
     }
 
-    private static void TryFindAndInvokeHyperlinks()
+    private static async Task TryFindAndInvokeHyperlinksAsync()
     {
         AutomationElement rootElement = AutomationElement.RootElement;
         var hyperLinkCondition = new AndCondition(
@@ -56,7 +56,7 @@ public class SITAO
             AutomationElement window = rootElement.FindFirst(TreeScope.Children, windowCondition);
             if (window != null)
             {
-                FindAndInvokeHyperlinksInWindow(window, hyperLinkCondition);
+                await FindAndInvokeHyperlinksInWindowAsync(window, hyperLinkCondition);
             }
             else
             {
@@ -66,28 +66,28 @@ public class SITAO
         else
         {
             var windows = rootElement.FindAll(TreeScope.Children, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Window));
-            foreach (AutomationElement window in windows)
-            {
-                FindAndInvokeHyperlinksInWindow(window, hyperLinkCondition);
-            }
+            var tasks = windows.Cast<AutomationElement>().Select(window => FindAndInvokeHyperlinksInWindowAsync(window, hyperLinkCondition));
+            await Task.WhenAll(tasks);
         }
     }
 
-    private static void FindAndInvokeHyperlinksInWindow(AutomationElement window, Condition hyperLinkCondition)
+    private static async Task FindAndInvokeHyperlinksInWindowAsync(AutomationElement window, Condition hyperLinkCondition)
     {
         var hyperLinks = window.FindAll(TreeScope.Descendants, hyperLinkCondition);
-        foreach (AutomationElement hyperLink in hyperLinks)
+        var tasks = hyperLinks.Cast<AutomationElement>().Select(async currentHyperLink =>
         {
-            if (hyperLink.TryGetCurrentPattern(InvokePattern.Pattern, out object pattern))
+            if (currentHyperLink.TryGetCurrentPattern(InvokePattern.Pattern, out object pattern))
             {
                 var invokePattern = (InvokePattern)pattern;
-                invokePattern.Invoke();
+                await Task.Run(() => invokePattern.Invoke());
                 log.Info($"Invoked hyperlink: {hyperlinkText} in window: {window.Current.Name}.");
             }
             else
             {
                 log.Warn($"Hyperlink: {hyperlinkText} in window: {window.Current.Name} could not be invoked.");
             }
-        }
+        });
+
+        await Task.WhenAll(tasks);
     }
 }
