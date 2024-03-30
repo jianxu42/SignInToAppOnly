@@ -76,8 +76,14 @@ public class SITAO
     private static void FindAndInvokeHyperlinksInWindow(AutomationElement window, Condition hyperLinkCondition)
     {
         var hyperLinks = window.FindAll(TreeScope.Descendants, hyperLinkCondition);
-        foreach (AutomationElement hyperLink in hyperLinks)
+        int startIndex = 0;
+        int endIndex = hyperLinks.Count - 1;
+
+        while (startIndex <= endIndex)
         {
+            int midIndex = (startIndex + endIndex) / 2;
+            AutomationElement hyperLink = hyperLinks[midIndex];
+
             if (hyperLink.TryGetCurrentPattern(InvokePattern.Pattern, out object pattern))
             {
                 var invokePattern = (InvokePattern)pattern;
@@ -87,6 +93,15 @@ public class SITAO
             else
             {
                 log.Warn($"Hyperlink: {hyperlinkText} in window: {window.Current.Name} could not be invoked.");
+            }
+
+            if (hyperlinkText.CompareTo(hyperLink.Current.Name) < 0)
+            {
+                endIndex = midIndex - 1;
+            }
+            else
+            {
+                startIndex = midIndex + 1;
             }
         }
     }
