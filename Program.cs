@@ -1,4 +1,4 @@
-﻿using log4net;
+using log4net;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,10 +10,11 @@ public class SITAO
     private static readonly ILog log = LogManager.GetLogger(typeof(SITAO));
     private static string windowName = null;
     private static string hyperlinkText;
+    private const int DelayTime = 500;
 
     public static void Main(string[] args)
     {
-        if (args.Length < 1)
+        if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0]))
         {
             Console.WriteLine("Usage: SignInToAppOnly.exe <hyperlinkText> [windowName]");
             return;
@@ -37,14 +38,15 @@ public class SITAO
     {
         while (true)
         {
-            await TryFindAndInvokeHyperlinksAsync();
-            await Task.Delay(500);
+            await TryFindAndInvokeHyperlinksAsync().ConfigureAwait(false);
+            await Task.Delay(DelayTime).ConfigureAwait(false);
         }
     }
 
     private static async Task TryFindAndInvokeHyperlinksAsync()
     {
         AutomationElement rootElement = AutomationElement.RootElement;
+
         var hyperLinkCondition = new AndCondition(
             new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Hyperlink),
             new PropertyCondition(AutomationElement.NameProperty, hyperlinkText)
@@ -52,23 +54,33 @@ public class SITAO
 
         if (windowName != null)
         {
-            var windowCondition = new PropertyCondition(AutomationElement.NameProperty, windowName);
-            AutomationElement window = rootElement.FindFirst(TreeScope.Children, windowCondition);
-            if (window != null)
-            {
-                await FindAndInvokeHyperlinksInWindowAsync(window, hyperLinkCondition);
-            }
-            else
-            {
-                log.Warn($"Window: {windowName} not found.");
-            }
+            await FindAndInvokeHyperlinksInSpecificWindowAsync(rootElement, hyperLinkCondition).ConfigureAwait(false);
         }
         else
         {
-            var windows = rootElement.FindAll(TreeScope.Children, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Window));
-            var tasks = windows.Cast<AutomationElement>().Select(window => FindAndInvokeHyperlinksInWindowAsync(window, hyperLinkCondition));
-            await Task.WhenAll(tasks);
+            await FindAndInvokeHyperlinksInAllWindowsAsync(rootElement, hyperLinkCondition).ConfigureAwait(false);
         }
+    }
+
+    private static async Task FindAndInvokeHyperlinksInSpecificWindowAsync(AutomationElement rootElement, Condition hyperLinkCondition)
+    {
+        var windowCondition = new PropertyCondition(AutomationElement.NameProperty, windowName);
+        AutomationElement window = rootElement.FindFirst(TreeScope.Children, windowCondition);
+        if (window != null)
+        {
+            await FindAndInvokeHyperlinksInWindowAsync(window, hyperLinkCondition).ConfigureAwait(false);
+        }
+        else
+        {
+            log.Warn($"Window: {windowName} not found.");
+        }
+    }
+
+    private static async Task FindAndInvokeHyperlinksInAllWindowsAsync(AutomationElement rootElement, Condition hyperLinkCondition)
+    {
+        var windows = rootElement.FindAll(TreeScope.Children, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Window));
+        var tasks = windows.Cast<AutomationElement>().Select(window => FindAndInvokeHyperlinksInWindowAsync(window, hyperLinkCondition));
+        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
     private static async Task FindAndInvokeHyperlinksInWindowAsync(AutomationElement window, Condition hyperLinkCondition)
@@ -79,7 +91,7 @@ public class SITAO
             if (currentHyperLink.TryGetCurrentPattern(InvokePattern.Pattern, out object pattern))
             {
                 var invokePattern = (InvokePattern)pattern;
-                await Task.Run(() => invokePattern.Invoke());
+                await Task.Run(() => invokePattern.Invoke()).ConfigureAwait(false);
                 log.Info($"Invoked hyperlink: {hyperlinkText} in window: {window.Current.Name}.");
             }
             else
@@ -88,6 +100,6 @@ public class SITAO
             }
         });
 
-        await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 }
